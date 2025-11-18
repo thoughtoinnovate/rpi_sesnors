@@ -521,7 +521,7 @@ class AQIApp:
         """
         try:
             # Import sensor here to avoid circular imports
-            from apis.pm25_sensor import PM25Sensor
+            from sensors.pm25_sensor import PM25Sensor
 
             # Get location
             location = self.db.get_location_by_name(location_name)

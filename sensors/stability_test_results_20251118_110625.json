@@ -1,0 +1,329 @@
+{
+  "test_metadata": {
+    "test_type": "24_hour_stability_test",
+    "sensor_config": {
+      "i2c": {
+        "bus": 1,
+        "address": 25,
+        "timeout": 1.0,
+        "max_retries": 3,
+        "retry_delay": 0.1
+      },
+      "sensor": {
+        "warmup_time": 5,
+        "read_interval": 1,
+        "auto_warmup": true,
+        "max_pm_concentration": 999,
+        "max_particle_count": 65535,
+        "enable_validation": true
+      },
+      "logging": {
+        "level": "INFO",
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        "file": null,
+        "console": true
+      },
+      "performance": {
+        "enable_caching": false,
+        "cache_timeout": 0.5,
+        "async_operations": false
+      },
+      "debug": {
+        "enable_debug_output": false,
+        "log_raw_data": false,
+        "log_timing": false
+      }
+    },
+    "test_parameters": {
+      "reading_interval_seconds": 20,
+      "memory_sample_interval_seconds": 300,
+      "performance_sample_interval_seconds": 600
+    }
+  },
+  "test_statistics": {
+    "test_duration": {
+      "start_time": "2025-11-18T11:05:00.970842",
+      "end_time": "2025-11-18T11:06:25.039721",
+      "duration_hours": 0.02335246638888889,
+      "duration_seconds": 84.068879
+    },
+    "reading_statistics": {
+      "total_readings": 5,
+      "total_errors": 0,
+      "error_rate_percent": 0.0,
+      "readings_per_hour": 214.1101465145027,
+      "success_rate_percent": 100.0
+    },
+    "data_quality": {
+      "pm25_stats": {
+        "count": 5,
+        "min": 447,
+        "max": 459,
+        "mean": 453.6,
+        "median": 453,
+        "std_dev": 4.8,
+        "q25": 450,
+        "q75": 459
+      },
+      "pm10_stats": {
+        "count": 5,
+        "min": 523,
+        "max": 563,
+        "mean": 544.8,
+        "median": 548,
+        "std_dev": 15.548633380461448,
+        "q25": 531,
+        "q75": 559
+      },
+      "data_gaps": []
+    },
+    "memory_analysis": {
+      "samples_count": 1,
+      "initial_memory_mb": 33.54296875,
+      "final_memory_mb": 33.54296875,
+      "peak_memory_mb": 33.54296875,
+      "min_memory_mb": 33.54296875,
+      "avg_memory_mb": 33.54296875,
+      "memory_growth_mb": 0,
+      "memory_stability": 0.0
+    },
+    "performance_analysis": {
+      "samples_count": 1,
+      "avg_error_rate": 0.0,
+      "peak_error_rate": 0.0,
+      "performance_stability": 0
+    },
+    "error_analysis": {
+      "total_errors": 0
+    }
+  },
+  "raw_data": {
+    "readings": [
+      {
+        "timestamp": 1763444100.9720235,
+        "pm25_standard": 453,
+        "pm10_standard": 548,
+        "pm25_atmospheric": 301,
+        "pm10_atmospheric": 365,
+        "particle_counts": {
+          "0.3um": 10551,
+          "0.5um": 9757,
+          "1.0um": 3294,
+          "2.5um": 567,
+          "5.0um": 17,
+          "10um": 0
+        },
+        "reading_duration": 0.00933074951171875,
+        "aqi_aqi_value": 375,
+        "aqi_aqi_level": "Hazardous",
+        "aqi_aqi_color": "Maroon",
+        "aqi_aqi_source": "PM2.5",
+        "aqi_pm25_atmospheric": 301.0,
+        "aqi_pm10_atmospheric": null,
+        "aqi_pm25_aqi": 375,
+        "aqi_pm10_aqi": null,
+        "aqi_health_message": "Emergency conditions: everyone affected",
+        "aqi_timestamp": 1763444100.9823568
+      },
+      {
+        "timestamp": 1763444120.9922452,
+        "pm25_standard": 459,
+        "pm10_standard": 563,
+        "pm25_atmospheric": 305,
+        "pm10_atmospheric": 374,
+        "particle_counts": {
+          "0.3um": 10614,
+          "0.5um": 9845,
+          "1.0um": 3307,
+          "2.5um": 574,
+          "5.0um": 16,
+          "10um": 0
+        },
+        "reading_duration": 0.00628209114074707,
+        "aqi_aqi_value": 379,
+        "aqi_aqi_level": "Hazardous",
+        "aqi_aqi_color": "Maroon",
+        "aqi_aqi_source": "PM2.5",
+        "aqi_pm25_atmospheric": 305.0,
+        "aqi_pm10_atmospheric": null,
+        "aqi_pm25_aqi": 379,
+        "aqi_pm10_aqi": null,
+        "aqi_health_message": "Emergency conditions: everyone affected",
+        "aqi_timestamp": 1763444120.9992967
+      },
+      {
+        "timestamp": 1763444141.0026855,
+        "pm25_standard": 459,
+        "pm10_standard": 559,
+        "pm25_atmospheric": 306,
+        "pm10_atmospheric": 372,
+        "particle_counts": {
+          "0.3um": 10484,
+          "0.5um": 9705,
+          "1.0um": 3278,
+          "2.5um": 598,
+          "5.0um": 10,
+          "10um": 0
+        },
+        "reading_duration": 0.0061604976654052734,
+        "aqi_aqi_value": 380,
+        "aqi_aqi_level": "Hazardous",
+        "aqi_aqi_color": "Maroon",
+        "aqi_aqi_source": "PM2.5",
+        "aqi_pm25_atmospheric": 306.0,
+        "aqi_pm10_atmospheric": null,
+        "aqi_pm25_aqi": 380,
+        "aqi_pm10_aqi": null,
+        "aqi_health_message": "Emergency conditions: everyone affected",
+        "aqi_timestamp": 1763444141.0095441
+      },
+      {
+        "timestamp": 1763444161.0180337,
+        "pm25_standard": 450,
+        "pm10_standard": 523,
+        "pm25_atmospheric": 300,
+        "pm10_atmospheric": 348,
+        "particle_counts": {
+          "0.3um": 10361,
+          "0.5um": 9632,
+          "1.0um": 3218,
+          "2.5um": 549,
+          "5.0um": 7,
+          "10um": 0
+        },
+        "reading_duration": 0.007638692855834961,
+        "aqi_aqi_value": 374,
+        "aqi_aqi_level": "Hazardous",
+        "aqi_aqi_color": "Maroon",
+        "aqi_aqi_source": "PM2.5",
+        "aqi_pm25_atmospheric": 300.0,
+        "aqi_pm10_atmospheric": null,
+        "aqi_pm25_aqi": 374,
+        "aqi_pm10_aqi": null,
+        "aqi_health_message": "Emergency conditions: everyone affected",
+        "aqi_timestamp": 1763444161.026543
+      },
+      {
+        "timestamp": 1763444181.030087,
+        "pm25_standard": 447,
+        "pm10_standard": 531,
+        "pm25_atmospheric": 298,
+        "pm10_atmospheric": 353,
+        "particle_counts": {
+          "0.3um": 10439,
+          "0.5um": 9656,
+          "1.0um": 3196,
+          "2.5um": 547,
+          "5.0um": 11,
+          "10um": 0
+        },
+        "reading_duration": 0.006169795989990234,
+        "aqi_aqi_value": 372,
+        "aqi_aqi_level": "Hazardous",
+        "aqi_aqi_color": "Maroon",
+        "aqi_aqi_source": "PM2.5",
+        "aqi_pm25_atmospheric": 298.0,
+        "aqi_pm10_atmospheric": null,
+        "aqi_pm25_aqi": 372,
+        "aqi_pm10_aqi": null,
+        "aqi_health_message": "Emergency conditions: everyone affected",
+        "aqi_timestamp": 1763444181.0369742
+      }
+    ],
+    "errors": [],
+    "memory_samples": [
+      {
+        "timestamp": 1763444100.9839196,
+        "rss_mb": 33.54296875,
+        "vms_mb": 44.45703125,
+        "percent": 3.7025859467289797
+      }
+    ],
+    "performance_samples": [
+      {
+        "total_readings": 5,
+        "total_errors": 0,
+        "error_rate": 0.0,
+        "last_reading_time": 1763444100.982252,
+        "uptime_seconds": 0.014369010925292969,
+        "i2c_statistics": {
+          "read_count": 12,
+          "error_count": 0,
+          "success_rate": 1.0,
+          "last_read_time": 1763444100.9821844,
+          "is_connected": true,
+          "last_error": null
+        },
+        "cache_info": {
+          "concentration_cache": {
+            "0x07": {
+              "value": 453,
+              "timestamp": 1763444100.9735742,
+              "age_seconds": 0.011078596115112305,
+              "valid": true
+            },
+            "0x09": {
+              "value": 548,
+              "timestamp": 1763444100.974342,
+              "age_seconds": 0.010310649871826172,
+              "valid": true
+            },
+            "0x0D": {
+              "value": 301,
+              "timestamp": 1763444100.9822268,
+              "age_seconds": 0.0024259090423583984,
+              "valid": true
+            },
+            "0x0F": {
+              "value": 365,
+              "timestamp": 1763444100.97581,
+              "age_seconds": 0.008842706680297852,
+              "valid": true
+            }
+          },
+          "particle_count_cache": {
+            "0.3\u03bcm": {
+              "value": 10551,
+              "timestamp": 1763444100.976577,
+              "age_seconds": 0.008144140243530273,
+              "valid": true
+            },
+            "0.5\u03bcm": {
+              "value": 9757,
+              "timestamp": 1763444100.977317,
+              "age_seconds": 0.0074040889739990234,
+              "valid": true
+            },
+            "1.0\u03bcm": {
+              "value": 3294,
+              "timestamp": 1763444100.9782155,
+              "age_seconds": 0.006505727767944336,
+              "valid": true
+            },
+            "2.5\u03bcm": {
+              "value": 567,
+              "timestamp": 1763444100.9796894,
+              "age_seconds": 0.0050318241119384766,
+              "valid": true
+            },
+            "5.0\u03bcm": {
+              "value": 17,
+              "timestamp": 1763444100.9805532,
+              "age_seconds": 0.004168033599853516,
+              "valid": true
+            },
+            "10\u03bcm": {
+              "value": 0,
+              "timestamp": 1763444100.9812984,
+              "age_seconds": 0.0034227371215820312,
+              "valid": true
+            }
+          }
+        },
+        "history_size": 0,
+        "max_history_size": 1000,
+        "timestamp": 1763444100.972011
+      }
+    ]
+  }
+}

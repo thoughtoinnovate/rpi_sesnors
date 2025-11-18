@@ -27,7 +27,7 @@ current_dir = Path(__file__).parent
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
 
-from app.scheduler import AQIScheduler, TimeParser
+from aqi.scheduler import AQIScheduler, TimeParser
 
 
 def setup_logging(log_level: str = 'INFO'):
@@ -46,7 +46,7 @@ def setup_logging(log_level: str = 'INFO'):
 def validate_location(db_path: str, location_name: str) -> bool:
     """Validate that the location exists in the database."""
     try:
-        from app.aqi_app import AQIDatabase
+        from aqi.aqi_app import AQIDatabase
         with AQIDatabase(db_path) as db:
             location = db.get_location_by_name(location_name)
             return location is not None

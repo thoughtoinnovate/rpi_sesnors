@@ -26,7 +26,7 @@ current_dir = Path(__file__).parent
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
 
-from apis.pm25_sensor import PM25Sensor
+from sensors.pm25_sensor import PM25Sensor
 
 
 class TimeParser:

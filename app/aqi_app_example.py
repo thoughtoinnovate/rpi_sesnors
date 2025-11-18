@@ -16,12 +16,12 @@ import sys
 import time
 from pathlib import Path
 
-# Add the parent directory to path for imports (to access apis/)
+# Add the parent directory to path for imports (to access sensors/ and aqi/)
 current_dir = Path(__file__).parent
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
 
-from aqi_app import AQIApp, quick_reading
+from aqi.aqi_app import AQIApp, quick_reading
 
 
 def main():

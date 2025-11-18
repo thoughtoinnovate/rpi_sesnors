@@ -20,8 +20,15 @@ Features:
 - Historical data analysis
 """
 
-from .aqi_app import AQIApp, AQIDatabase, quick_reading, create_aqi_app
-from .scheduler import AQIScheduler, TimeParser, create_scheduler
+# Import from aqi package (using absolute imports)
+import sys
+from pathlib import Path
+current_dir = Path(__file__).parent
+parent_dir = current_dir.parent
+sys.path.insert(0, str(parent_dir))
+
+from aqi.aqi_app import AQIApp, AQIDatabase, quick_reading, create_aqi_app
+from aqi.scheduler import AQIScheduler, TimeParser, create_scheduler
 
 __version__ = "1.1.0"
 __author__ = "PM25 Sensor Project"
