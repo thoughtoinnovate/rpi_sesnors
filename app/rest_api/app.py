@@ -12,6 +12,9 @@ Endpoints:
 - GET /api/all - Get all data with pagination
 - GET /api/stats/<location_name> - Get statistics for a location
 - GET /api/health - API health check
+- POST /api/scheduler/start - Start AQI scheduler
+- POST /api/scheduler/stop - Stop AQI scheduler
+- GET /api/scheduler/status - Get scheduler status
 
 All endpoints return JSON responses optimized for low-bandwidth connections.
 """
@@ -19,6 +22,12 @@ All endpoints return JSON responses optimized for low-bandwidth connections.
 import os
 import sys
 from pathlib import Path
+
+# Add parent directories to path for imports
+current_dir = Path(__file__).parent
+parent_dir = current_dir.parent.parent
+sys.path.insert(0, str(parent_dir))
+
 from flask import Flask, jsonify, request, abort
 try:
     from flask_cors import CORS
@@ -28,13 +37,10 @@ except ImportError:
 import sqlite3
 from datetime import datetime, timedelta
 import logging
-
-# Add parent directories to path for imports
-current_dir = Path(__file__).parent
-parent_dir = current_dir.parent.parent
-sys.path.insert(0, str(parent_dir))
+import threading
 
 from aqi.aqi_app import AQIDatabase
+from aqi.scheduler import AQIScheduler, TimeParser
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +53,10 @@ if CORS:
 
 # Database configuration
 DEFAULT_DB_PATH = os.getenv('AQI_DB_PATH', str(current_dir.parent / 'aqi_demo.db'))
+
+# Global scheduler management
+scheduler = None
+scheduler_thread = None
 
 def get_database():
     """Get database connection with error handling."""
@@ -434,6 +444,113 @@ def get_location_stats(location_name):
             'success': False,
             'error': str(e)
         }), 500
+
+# Scheduler Management Endpoints
+@app.route('/api/scheduler/start', methods=['POST'])
+def start_scheduler():
+    """Start the AQI scheduler with specified location and interval."""
+    global scheduler, scheduler_thread
+
+    if scheduler and scheduler.running:
+        return jsonify({
+            'success': False,
+            'error': 'Scheduler is already running'
+        }), 400
+
+    data = request.get_json()
+    if not data:
+        return jsonify({
+            'success': False,
+            'error': 'JSON body required'
+        }), 400
+
+    location = data.get('location')
+    interval_str = data.get('interval')
+
+    if not location or not interval_str:
+        return jsonify({
+            'success': False,
+            'error': 'location and interval are required'
+        }), 400
+
+    try:
+        interval_seconds = TimeParser.parse_time_interval(interval_str)
+    except ValueError as e:
+        return jsonify({
+            'success': False,
+            'error': f'Invalid interval format: {e}'
+        }), 400
+
+    try:
+        scheduler = AQIScheduler(location, interval_seconds, DEFAULT_DB_PATH)
+        scheduler_thread = threading.Thread(target=scheduler.run, daemon=True)
+        scheduler_thread.start()
+
+        return jsonify({
+            'success': True,
+            'message': f'Scheduler started for location "{location}" with interval {interval_str}',
+            'location': location,
+            'interval': interval_str
+        })
+
+    except Exception as e:
+        logger.error(f"Failed to start scheduler: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/scheduler/stop', methods=['POST'])
+def stop_scheduler():
+    """Stop the running AQI scheduler."""
+    global scheduler, scheduler_thread
+
+    if not scheduler or not scheduler.running:
+        return jsonify({
+            'success': False,
+            'error': 'Scheduler is not running'
+        }), 400
+
+    try:
+        scheduler.running = False
+        if scheduler_thread and scheduler_thread.is_alive():
+            scheduler_thread.join(timeout=10)  # Wait up to 10 seconds
+
+        return jsonify({
+            'success': True,
+            'message': 'Scheduler stopped successfully'
+        })
+
+    except Exception as e:
+        logger.error(f"Failed to stop scheduler: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/scheduler/status', methods=['GET'])
+def get_scheduler_status():
+    """Get the current status of the AQI scheduler."""
+    global scheduler
+
+    if scheduler:
+        status = scheduler.get_status()
+        return jsonify({
+            'success': True,
+            'status': status
+        })
+    else:
+        return jsonify({
+            'success': True,
+            'status': {
+                'running': False,
+                'location': None,
+                'interval_seconds': None,
+                'readings_taken': 0,
+                'start_time': None,
+                'last_reading_time': None
+            }
+        })
 
 @app.errorhandler(404)
 def not_found(error):

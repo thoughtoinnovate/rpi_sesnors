@@ -16,6 +16,7 @@ import re
 import time
 import signal
 import logging
+import threading
 from typing import Optional, Tuple
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -116,9 +117,10 @@ class AQIScheduler:
         # Setup logging
         self.logger = logging.getLogger(__name__)
 
-        # Setup signal handlers for graceful shutdown
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
+        # Setup signal handlers for graceful shutdown (only in main thread)
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, self._signal_handler)
+            signal.signal(signal.SIGTERM, self._signal_handler)
 
         self.logger.info(f"AQI Scheduler initialized for location '{location_name}'")
         self.logger.info(f"Interval: {interval_seconds} seconds ({TimeParser.format_duration(interval_seconds)})")
