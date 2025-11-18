@@ -15,6 +15,7 @@ Endpoints:
 - POST /api/scheduler/start - Start AQI scheduler
 - POST /api/scheduler/stop - Stop AQI scheduler
 - GET /api/scheduler/status - Get scheduler status
+- POST /api/admin/clear_data - Clear all database data (admin only)
 
 All endpoints return JSON responses optimized for low-bandwidth connections.
 """
@@ -539,18 +540,50 @@ def get_scheduler_status():
             'success': True,
             'status': status
         })
-    else:
+
+# Admin Endpoints
+@app.route('/api/admin/clear_data', methods=['POST'])
+def clear_all_data():
+    """Clear all data from the database (admin operation)."""
+    data = request.get_json()
+    if not data:
         return jsonify({
-            'success': True,
-            'status': {
-                'running': False,
-                'location': None,
-                'interval_seconds': None,
-                'readings_taken': 0,
-                'start_time': None,
-                'last_reading_time': None
-            }
-        })
+            'success': False,
+            'error': 'JSON body required'
+        }), 400
+
+    confirm = data.get('confirm')
+    if confirm != 'CLEAR_ALL_DATA':
+        return jsonify({
+            'success': False,
+            'error': 'Confirmation required. Set confirm to "CLEAR_ALL_DATA"'
+        }), 400
+
+    try:
+        with get_database() as db:
+            conn = db._get_connection()
+            cursor = conn.cursor()
+
+            # Delete in order to respect foreign keys
+            cursor.execute('DELETE FROM aqi_calculations')
+            cursor.execute('DELETE FROM readings')
+            cursor.execute('DELETE FROM locations')
+
+            conn.commit()
+
+            logger.warning("All database data cleared via admin API")
+
+            return jsonify({
+                'success': True,
+                'message': 'All database data has been cleared'
+            })
+
+    except Exception as e:
+        logger.error(f"Failed to clear database data: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.errorhandler(404)
 def not_found(error):
