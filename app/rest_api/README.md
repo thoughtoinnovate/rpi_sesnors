@@ -235,6 +235,51 @@ options:
   --workers WORKERS Number of worker threads (default: 1 for RPi)
 ```
 
+## Testing with Real Sensor Data
+
+Since this API works with real PM25 sensor data, testing should be done with an actual sensor connected. Here's how to test the API:
+
+### Start the API Server
+```bash
+cd app/rest_api/
+python run.py --host 0.0.0.0 --port 5000
+```
+
+### Test Endpoints with Real Data
+```bash
+# Check API health
+curl http://localhost:5000/api/health
+
+# Get monitoring locations
+curl http://localhost:5000/api/locations
+
+# Get latest real sensor reading
+curl "http://localhost:5000/api/latest/Home%20Office"
+
+# Get real historical data (last 2 hours)
+curl "http://localhost:5000/api/history/Home%20Office?hours=2"
+
+# Get real statistics
+curl "http://localhost:5000/api/stats/Home%20Office?days=1"
+```
+
+### Expected Real Data Response
+```json
+{
+  "success": true,
+  "latest_reading": {
+    "pm2_5_atmospheric": 52.0,
+    "aqi": {
+      "value": 141,
+      "level": "Unhealthy for Sensitive Groups",
+      "color": "Orange"
+    }
+  }
+}
+```
+
+**Note:** All testing uses real sensor data from connected PM25 sensors. No mock or dummy data is used.
+
 ## Usage Examples
 
 ### Python Client
