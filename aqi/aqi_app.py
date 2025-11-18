@@ -387,7 +387,8 @@ class AQIDatabase:
                     l.name as location_name,
                     a.aqi_value,
                     a.aqi_level,
-                    a.aqi_color
+                    a.aqi_color,
+                    a.aqi_source
                 FROM readings r
                 JOIN locations l ON r.location_id = l.id
                 LEFT JOIN aqi_calculations a ON r.id = a.reading_id
@@ -445,7 +446,8 @@ class AQIDatabase:
 
             # Get location info
             cursor.execute('SELECT * FROM locations WHERE id = ?', (location_id,))
-            location = dict(cursor.fetchone()) if cursor.fetchone() else None
+            location_row = cursor.fetchone()
+            location = dict(location_row) if location_row else None
 
             if not location:
                 return {}
@@ -462,7 +464,8 @@ class AQIDatabase:
                 WHERE r.location_id = ?
             ''', (location_id,))
 
-            stats = dict(cursor.fetchone()) if cursor.fetchone() else {}
+            row = cursor.fetchone()
+            stats = dict(row) if row else {}
 
             return {
                 'location': location,

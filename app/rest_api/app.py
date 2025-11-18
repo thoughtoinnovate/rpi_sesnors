@@ -63,11 +63,22 @@ def health_check():
         with get_database() as db:
             # Quick database check
             locations = db.list_locations()
+
+            # Check sensor availability
+            sensor_available = False
+            try:
+                from sensors.pm25_sensor import PM25Sensor
+                sensor = PM25Sensor(auto_connect=False)
+                sensor_available = True
+            except Exception as e:
+                logger.debug(f"Sensor not available: {e}")
+
             return jsonify({
                 'status': 'healthy',
                 'timestamp': datetime.now().isoformat(),
                 'database_connected': True,
                 'locations_count': len(locations),
+                'sensor_available': sensor_available,
                 'version': '1.0.0'
             })
     except Exception as e:
@@ -82,12 +93,42 @@ def health_check():
 def get_locations():
     """Get all monitoring locations."""
     try:
+        # Parse query parameters
+        page = request.args.get('page', default=1, type=int)
+        per_page = request.args.get('per_page', default=50, type=int)
+
+        # Validate parameters
+        if page < 1:
+            return jsonify({
+                'success': False,
+                'error': 'Page must be >= 1'
+            }), 400
+
+        if per_page < 1 or per_page > 200:
+            return jsonify({
+                'success': False,
+                'error': 'per_page must be between 1 and 200'
+            }), 400
+
         with get_database() as db:
             locations = db.list_locations()
+            total = len(locations)
+            pages = (total + per_page - 1) // per_page
+
+            # Apply pagination
+            offset = (page - 1) * per_page
+            paginated_locations = locations[offset:offset + per_page]
+
             return jsonify({
                 'success': True,
-                'count': len(locations),
-                'locations': locations
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': total,
+                    'pages': pages
+                },
+                'count': len(paginated_locations),
+                'locations': paginated_locations
             })
     except Exception as e:
         logger.error(f"Failed to get locations: {e}")
@@ -164,7 +205,8 @@ def get_historical_data(location_name):
     try:
         # Parse query parameters
         hours = request.args.get('hours', default=24, type=int)
-        limit = request.args.get('limit', default=100, type=int)
+        page = request.args.get('page', default=1, type=int)
+        per_page = request.args.get('per_page', default=100, type=int)
 
         # Validate parameters
         if hours < 1 or hours > 168:  # Max 1 week
@@ -173,10 +215,16 @@ def get_historical_data(location_name):
                 'error': 'Hours must be between 1 and 168 (1 week)'
             }), 400
 
-        if limit < 1 or limit > 1000:
+        if page < 1:
             return jsonify({
                 'success': False,
-                'error': 'Limit must be between 1 and 1000'
+                'error': 'Page must be >= 1'
+            }), 400
+
+        if per_page < 1 or per_page > 1000:
+            return jsonify({
+                'success': False,
+                'error': 'per_page must be between 1 and 1000'
             }), 400
 
         with get_database() as db:
@@ -199,8 +247,11 @@ def get_historical_data(location_name):
                 location_id=location['id']
             )
 
-            # Limit results
-            readings = readings[:limit]
+            # Apply pagination
+            total = len(readings)
+            pages = (total + per_page - 1) // per_page
+            offset = (page - 1) * per_page
+            readings = readings[offset:offset + per_page]
 
             # Format response
             formatted_readings = []
@@ -234,6 +285,12 @@ def get_historical_data(location_name):
                     'start': start_time.isoformat(),
                     'end': end_time.isoformat(),
                     'hours': hours
+                },
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': total,
+                    'pages': pages
                 },
                 'count': len(formatted_readings),
                 'readings': formatted_readings
