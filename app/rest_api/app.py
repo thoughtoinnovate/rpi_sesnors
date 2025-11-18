@@ -16,6 +16,8 @@ Endpoints:
 - POST /api/scheduler/stop - Stop AQI scheduler
 - GET /api/scheduler/status - Get scheduler status
 - POST /api/admin/clear_data - Clear all database data (admin only)
+- GET /api/sensor/reading - Get raw sensor reading data
+- POST /api/sensor/calculate_aqi - Calculate AQI from raw PM data
 
 All endpoints return JSON responses optimized for low-bandwidth connections.
 """
@@ -535,10 +537,29 @@ def get_scheduler_status():
     global scheduler
 
     if scheduler:
-        status = scheduler.get_status()
+        try:
+            status = scheduler.get_status()
+            return jsonify({
+                'success': True,
+                'status': status
+            })
+        except Exception as e:
+            logger.error(f"Failed to get scheduler status: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    else:
         return jsonify({
             'success': True,
-            'status': status
+            'status': {
+                'running': False,
+                'location': None,
+                'interval_seconds': None,
+                'readings_taken': 0,
+                'start_time': None,
+                'last_reading_time': None
+            }
         })
 
 # Admin Endpoints
@@ -573,13 +594,66 @@ def clear_all_data():
 
             logger.warning("All database data cleared via admin API")
 
-            return jsonify({
-                'success': True,
-                'message': 'All database data has been cleared'
-            })
+        return jsonify({
+            'success': True,
+            'message': 'All database data has been cleared'
+        })
 
     except Exception as e:
         logger.error(f"Failed to clear database data: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/sensor/calculate_aqi', methods=['POST'])
+def calculate_aqi():
+    """Calculate AQI v2 from raw PM atmospheric data."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'JSON body required'
+            }), 400
+
+        pm25 = data.get('pm25')
+        pm10 = data.get('pm10')
+
+        if pm25 is None:
+            return jsonify({
+                'success': False,
+                'error': 'pm25 value is required'
+            }), 400
+
+        # Validate values
+        if not isinstance(pm25, (int, float)) or pm25 < 0:
+            return jsonify({
+                'success': False,
+                'error': 'pm25 must be a non-negative number'
+            }), 400
+
+        if pm10 is not None and (not isinstance(pm10, (int, float)) or pm10 < 0):
+            return jsonify({
+                'success': False,
+                'error': 'pm10 must be a non-negative number'
+            }), 400
+
+        from sensors.aqi_v2 import calculate_aqi_v2
+
+        aqi_result = calculate_aqi_v2(float(pm25), float(pm10) if pm10 is not None else None)
+
+        return jsonify({
+            'success': True,
+            'input': {
+                'pm25_atmospheric': pm25,
+                'pm10_atmospheric': pm10
+            },
+            'aqi': aqi_result
+        })
+
+    except Exception as e:
+        logger.error(f"Failed to calculate AQI: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
