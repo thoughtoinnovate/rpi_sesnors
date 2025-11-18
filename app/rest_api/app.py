@@ -41,6 +41,7 @@ import sqlite3
 from datetime import datetime, timedelta
 import logging
 import threading
+import time
 
 from aqi.aqi_app import AQIDatabase
 from aqi.scheduler import AQIScheduler, TimeParser
@@ -654,6 +655,643 @@ def calculate_aqi():
 
     except Exception as e:
         logger.error(f"Failed to calculate AQI: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# =============================================================================
+# SENSOR/AQI ENDPOINTS (/sensor/aqi/*)
+# =============================================================================
+
+# Sensor Endpoints (/sensor/aqi/sensor/*)
+@app.route('/sensor/aqi/sensor/reading', methods=['GET'])
+def get_sensor_reading():
+    """Get direct sensor reading without database storage."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            reading = sensor.get_complete_reading()
+            sensor.disconnect()
+
+            return jsonify({
+                'success': True,
+                'reading': reading,
+                'timestamp': datetime.now().isoformat()
+            })
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to get sensor reading: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/sensor/diagnostics', methods=['GET'])
+def get_sensor_diagnostics():
+    """Get comprehensive sensor diagnostics and performance data."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            # Get various diagnostic information
+            performance_stats = sensor.get_performance_statistics()
+            sensor_status = sensor.get_sensor_status()
+
+            diagnostics = {
+                'sensor_status': 'healthy' if sensor.is_initialized() else 'unavailable',
+                'performance_stats': performance_stats,
+                'sensor_info': sensor_status,
+                'power_status': {
+                    'is_sleeping': sensor.is_sleeping(),
+                    'is_warmed_up': sensor.is_warmed_up(),
+                    'firmware_version': sensor.get_firmware_version()
+                }
+            }
+
+            sensor.disconnect()
+
+            return jsonify({
+                'success': True,
+                'diagnostics': diagnostics,
+                'timestamp': datetime.now().isoformat()
+            })
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to get sensor diagnostics: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/sensor/calibration', methods=['GET'])
+def get_sensor_calibration():
+    """Check sensor calibration and data validity."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            # Basic calibration check - validate recent readings
+            reading = sensor.get_complete_reading()
+
+            # Check if readings are within expected ranges
+            pm25 = reading['concentrations']['atmospheric']['PM2.5']
+            pm10 = reading['concentrations']['atmospheric']['PM10']
+
+            calibration_status = {
+                'status': 'valid',
+                'last_check': datetime.now().isoformat(),
+                'data_ranges': {
+                    'pm2_5': {'value': pm25, 'range': '0-500', 'status': 'valid' if 0 <= pm25 <= 500 else 'out_of_range'},
+                    'pm10': {'value': pm10, 'range': '0-1000', 'status': 'valid' if 0 <= pm10 <= 1000 else 'out_of_range'}
+                },
+                'validation_errors': []
+            }
+
+            # Check for validation errors
+            if pm25 < 0 or pm25 > 500:
+                calibration_status['validation_errors'].append(f'PM2.5 value {pm25} out of range')
+            if pm10 < 0 or pm10 > 1000:
+                calibration_status['validation_errors'].append(f'PM10 value {pm10} out of range')
+
+            if calibration_status['validation_errors']:
+                calibration_status['status'] = 'invalid'
+
+            sensor.disconnect()
+
+            return jsonify({
+                'success': True,
+                'calibration': calibration_status,
+                'timestamp': datetime.now().isoformat()
+            })
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to check sensor calibration: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/sensor/power/status', methods=['GET'])
+def get_sensor_power_status():
+    """Get current sensor power status."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            power_status = {
+                'is_sleeping': sensor.is_sleeping(),
+                'is_warmed_up': sensor.is_warmed_up(),
+                'firmware_version': sensor.get_firmware_version(),
+                'sensor_status': 'active' if sensor.is_initialized() else 'inactive'
+            }
+
+            sensor.disconnect()
+
+            return jsonify({
+                'success': True,
+                'power_status': power_status,
+                'timestamp': datetime.now().isoformat()
+            })
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to get sensor power status: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/sensor/power/sleep', methods=['POST'])
+def sensor_enter_sleep():
+    """Put sensor into sleep mode."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            success = sensor.enter_sleep_mode()
+
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': 'Sensor entered sleep mode successfully',
+                    'power_status': {
+                        'is_sleeping': True,
+                        'sleep_entered_at': datetime.now().isoformat()
+                    },
+                    'timestamp': datetime.now().isoformat()
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to enter sleep mode'
+                }), 500
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to put sensor to sleep: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/sensor/power/wake', methods=['POST'])
+def sensor_wake_up():
+    """Wake sensor from sleep mode."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            success = sensor.wake_from_sleep()
+
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': 'Sensor woke from sleep mode successfully',
+                    'power_status': {
+                        'is_sleeping': False,
+                        'wake_time': datetime.now().isoformat()
+                    },
+                    'timestamp': datetime.now().isoformat()
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to wake from sleep mode'
+                }), 500
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to wake sensor: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/sensor/power/cycle', methods=['POST'])
+def sensor_power_cycle():
+    """Perform sensor power cycle."""
+    try:
+        data = request.get_json() or {}
+        sleep_duration = data.get('sleep_duration', 3.0)
+
+        if not isinstance(sleep_duration, (int, float)) or sleep_duration < 1 or sleep_duration > 30:
+            return jsonify({
+                'success': False,
+                'error': 'sleep_duration must be a number between 1 and 30 seconds'
+            }), 400
+
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            start_time = time.time()
+            success = sensor.perform_power_cycle(sleep_duration=sleep_duration)
+            end_time = time.time()
+
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': 'Power cycle completed successfully',
+                    'cycle_info': {
+                        'sleep_duration': sleep_duration,
+                        'total_duration': round(end_time - start_time, 2),
+                        'sensor_reinitialized': True
+                    },
+                    'timestamp': datetime.now().isoformat()
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Power cycle failed'
+                }), 500
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to perform power cycle: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/sensor/firmware', methods=['GET'])
+def get_sensor_firmware():
+    """Get sensor firmware information."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            firmware_version = sensor.get_firmware_version()
+
+            firmware_info = {
+                'version': firmware_version,
+                'model': 'PM25 Air Quality Sensor',
+                'capabilities': [
+                    'concentration_measurement',
+                    'particle_counting',
+                    'power_management',
+                    'aqi_calculation'
+                ],
+                'communication': 'I2C'
+            }
+
+            sensor.disconnect()
+
+            return jsonify({
+                'success': True,
+                'firmware': firmware_info,
+                'timestamp': datetime.now().isoformat()
+            })
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to get sensor firmware info: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# AQI Endpoints (/sensor/aqi/aqi/*)
+@app.route('/sensor/aqi/aqi/calculate', methods=['POST'])
+def calculate_aqi_endpoint():
+    """Calculate AQI from provided PM data."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'JSON body required'
+            }), 400
+
+        pm25 = data.get('pm25')
+        pm10 = data.get('pm10')
+        include_pm10_comparison = data.get('include_pm10_comparison', False)
+
+        if pm25 is None:
+            return jsonify({
+                'success': False,
+                'error': 'pm25 value is required'
+            }), 400
+
+        # Validate values
+        if not isinstance(pm25, (int, float)) or pm25 < 0:
+            return jsonify({
+                'success': False,
+                'error': 'pm25 must be a non-negative number'
+            }), 400
+
+        if pm10 is not None and (not isinstance(pm10, (int, float)) or pm10 < 0):
+            return jsonify({
+                'success': False,
+                'error': 'pm10 must be a non-negative number'
+            }), 400
+
+        from sensors.aqi_v2 import calculate_aqi_v2
+
+        aqi_result = calculate_aqi_v2(float(pm25), float(pm10) if pm10 is not None else None)
+
+        # Add calculation metadata
+        aqi_result['calculation_method'] = 'aqi_v2'
+        aqi_result['calculated_at'] = datetime.now().isoformat()
+        aqi_result['input_values'] = {
+            'pm25_atmospheric': pm25,
+            'pm10_atmospheric': pm10
+        }
+
+        return jsonify({
+            'success': True,
+            'aqi': aqi_result,
+            'timestamp': datetime.now().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Failed to calculate AQI: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/aqi/analysis/<location_name>', methods=['GET'])
+def get_aqi_analysis(location_name):
+    """Get AQI trend analysis for a location."""
+    try:
+        # Parse query parameters
+        days = request.args.get('days', default=7, type=int)
+
+        # Validate parameters
+        if days < 1 or days > 30:
+            return jsonify({
+                'success': False,
+                'error': 'days must be between 1 and 30'
+            }), 400
+
+        with get_database() as db:
+            # Get location info
+            location = db.get_location_by_name(location_name)
+            if not location:
+                return jsonify({
+                    'success': False,
+                    'error': f'Location "{location_name}" not found'
+                }), 404
+
+            # Get AQI statistics
+            stats = db.get_aqi_statistics(location_id=location['id'], days=days)
+
+            # Get recent readings for trend analysis
+            readings = db.get_recent_readings(location_id=location['id'], limit=min(days * 24, 1000))
+
+            # Analyze AQI levels distribution
+            level_counts = {}
+            aqi_values = []
+
+            for reading in readings:
+                if reading.get('aqi_value'):
+                    aqi_val = reading['aqi_value']
+                    aqi_values.append(aqi_val)
+
+                    # Categorize AQI level
+                    if aqi_val <= 50:
+                        level = 'Good'
+                    elif aqi_val <= 100:
+                        level = 'Moderate'
+                    elif aqi_val <= 150:
+                        level = 'Unhealthy for Sensitive Groups'
+                    elif aqi_val <= 200:
+                        level = 'Unhealthy'
+                    elif aqi_val <= 300:
+                        level = 'Very Unhealthy'
+                    else:
+                        level = 'Hazardous'
+
+                    level_counts[level] = level_counts.get(level, 0) + 1
+
+            # Calculate trend insights
+            if aqi_values:
+                avg_aqi = sum(aqi_values) / len(aqi_values)
+                max_aqi = max(aqi_values)
+                min_aqi = min(aqi_values)
+
+                # Determine air quality trend
+                if avg_aqi <= 50:
+                    trend = "good"
+                    recommendations = ["Air quality is satisfactory for all activities"]
+                elif avg_aqi <= 100:
+                    trend = "moderate"
+                    recommendations = ["Air quality is acceptable", "Unusually sensitive people should consider limiting prolonged outdoor exertion"]
+                elif avg_aqi <= 150:
+                    trend = "unhealthy_sensitive"
+                    recommendations = ["Sensitive groups may experience health effects", "Consider reducing prolonged outdoor activities"]
+                else:
+                    trend = "unhealthy"
+                    recommendations = ["Everyone may experience health effects", "Reduce outdoor activities"]
+            else:
+                trend = "no_data"
+                recommendations = ["No AQI data available for analysis"]
+
+            analysis = {
+                'location': location,
+                'time_period_days': days,
+                'total_readings': len(readings),
+                'aqi_statistics': stats,
+                'level_distribution': level_counts,
+                'trend': trend,
+                'health_recommendations': recommendations,
+                'data_points': len(aqi_values)
+            }
+
+            return jsonify({
+                'success': True,
+                'analysis': analysis,
+                'timestamp': datetime.now().isoformat()
+            })
+
+    except Exception as e:
+        logger.error(f"Failed to get AQI analysis for {location_name}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/aqi/breakpoints', methods=['GET'])
+def get_aqi_breakpoints():
+    """Get AQI breakpoint information."""
+    try:
+        from sensors.aqi_v2 import PM25_BREAKPOINTS, PM10_BREAKPOINTS
+
+        breakpoints_info = {
+            'pm25_breakpoints': [
+                {
+                    'range': f"{bp[0]}-{bp[1]} μg/m³",
+                    'aqi_range': f"{bp[2]}-{bp[3]}",
+                    'level': bp[4],
+                    'color': bp[5]
+                }
+                for bp in PM25_BREAKPOINTS
+            ],
+            'pm10_breakpoints': [
+                {
+                    'range': f"{bp[0]}-{bp[1]} μg/m³",
+                    'aqi_range': f"{bp[2]}-{bp[3]}"
+                }
+                for bp in PM10_BREAKPOINTS
+            ],
+            'calculation_method': 'aqi_v2',
+            'source': 'EPA AirNow AQI specification',
+            'last_updated': 'Based on 2023 EPA guidelines'
+        }
+
+        return jsonify({
+            'success': True,
+            'breakpoints': breakpoints_info,
+            'timestamp': datetime.now().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Failed to get AQI breakpoints: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Combined Endpoints (/sensor/aqi/combined/*)
+@app.route('/sensor/aqi/combined/reading/<location_name>', methods=['GET'])
+def get_combined_reading(location_name):
+    """Get combined sensor reading and AQI data for a location."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        # Get sensor reading
+        sensor = PM25Sensor()
+        try:
+            sensor_reading = sensor.get_complete_reading()
+
+            # Calculate AQI
+            pm25 = sensor_reading['concentrations']['atmospheric']['PM2.5']
+            pm10 = sensor_reading['concentrations']['atmospheric']['PM10']
+
+            from sensors.aqi_v2 import calculate_aqi_v2
+            aqi_result = calculate_aqi_v2(pm25, pm10)
+
+            # Store in database if location exists
+            with get_database() as db:
+                location = db.get_location_by_name(location_name)
+                if location:
+                    # Store the reading
+                    reading_id = db.store_reading(
+                        location_id=location['id'],
+                        pm1_0_atm=sensor_reading['concentrations']['atmospheric']['PM1.0'],
+                        pm2_5_atm=pm25,
+                        pm10_atm=pm10,
+                        pm1_0_std=sensor_reading['concentrations']['standard']['PM1.0'],
+                        pm2_5_std=sensor_reading['concentrations']['standard']['PM2.5'],
+                        pm10_std=sensor_reading['concentrations']['standard']['PM10'],
+                        particle_counts=sensor_reading['particle_counts'],
+                        sensor_info=sensor_reading['sensor_info']
+                    )
+
+                    # Store AQI calculation
+                    db.store_aqi_calculation(
+                        reading_id=reading_id,
+                        aqi_value=aqi_result['aqi_value'],
+                        aqi_level=aqi_result['aqi_level'],
+                        aqi_color=aqi_result['aqi_color'],
+                        aqi_source=aqi_result['aqi_source'],
+                        health_message=aqi_result['health_message'],
+                        pm25_aqi=aqi_result['pm25_aqi'],
+                        pm10_aqi=aqi_result['pm10_aqi']
+                    )
+
+            sensor.disconnect()
+
+            combined_data = {
+                'sensor_reading': sensor_reading,
+                'aqi_calculation': aqi_result,
+                'location': location_name,
+                'stored_in_database': location is not None
+            }
+
+            return jsonify({
+                'success': True,
+                'data': combined_data,
+                'timestamp': datetime.now().isoformat()
+            })
+
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to get combined reading for {location_name}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/sensor/aqi/combined/calculate', methods=['POST'])
+def calculate_aqi_from_sensor():
+    """Calculate AQI from current sensor data."""
+    try:
+        from sensors.pm25_sensor import PM25Sensor
+
+        sensor = PM25Sensor()
+        try:
+            # Get current sensor reading
+            reading = sensor.get_complete_reading()
+
+            # Extract PM values
+            pm25 = reading['concentrations']['atmospheric']['PM2.5']
+            pm10 = reading['concentrations']['atmospheric']['PM10']
+
+            # Calculate AQI
+            from sensors.aqi_v2 import calculate_aqi_v2
+            aqi_result = calculate_aqi_v2(pm25, pm10)
+
+            sensor.disconnect()
+
+            return jsonify({
+                'success': True,
+                'sensor_data': {
+                    'pm25_atmospheric': pm25,
+                    'pm10_atmospheric': pm10,
+                    'timestamp': reading['timestamp']
+                },
+                'aqi': aqi_result,
+                'timestamp': datetime.now().isoformat()
+            })
+
+        except Exception as e:
+            sensor.disconnect()
+            raise e
+
+    except Exception as e:
+        logger.error(f"Failed to calculate AQI from sensor: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
