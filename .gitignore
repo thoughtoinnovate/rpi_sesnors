@@ -69,3 +69,20 @@ ui/.vite/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Test results and logs
+*_test_results*.json
+*_results*.json
+comparison_results.json
+stability_test_results*.json
+validation_report.json
+*_log.txt
+app_rest_api_log.txt
+
+# Package manager files (keep package-lock.json for reproducibility)
+# yarn.lock
+# pnpm-lock.yaml
+
+# Build artifacts
+*.tsbuildinfo
+*.map
