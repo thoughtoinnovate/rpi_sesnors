@@ -7,7 +7,10 @@ including retry logic, error handling, and connection management.
 
 import time
 import logging
-import smbus
+try:
+    import smbus
+except ImportError:
+    import smbus2 as smbus
 from typing import List, Optional, Union
 
 from .constants import VALID_REGISTERS, ERROR_CODE, DATA_LENGTH_2_BYTES, DATA_LENGTH_1_BYTE
