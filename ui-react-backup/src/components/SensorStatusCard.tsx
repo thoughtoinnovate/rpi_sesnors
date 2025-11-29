@@ -5,7 +5,6 @@ import {
   Typography,
   Box,
   Chip,
-  Fade,
   Grow,
   LinearProgress,
 } from '@mui/material';

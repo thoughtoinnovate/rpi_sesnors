@@ -9,8 +9,6 @@ import {
   MenuItem,
   Select,
   FormControl,
-  InputLabel,
-  Button,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -84,8 +82,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     { id: 'outdoor', name: 'Outdoor' },
   ];
 
-  const currentLocations = locations.length > 0 ? locations : mockLocations;
-  const currentLocationName = currentLocations.find(loc => loc.id === selectedLocation)?.name || 'Select Location';
+   const currentLocations = locations.length > 0 ? locations : mockLocations;
 
   return (
     <AppBar position="sticky" elevation={2}>

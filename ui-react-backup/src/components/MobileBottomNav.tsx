@@ -35,7 +35,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     >
       <BottomNavigation
         value={currentView}
-        onChange={(event, newValue) => {
+        onChange={(_event, newValue) => {
           onViewChange(newValue);
         }}
         showLabels

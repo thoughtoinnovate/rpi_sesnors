@@ -37,7 +37,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [currentView, setCurrentView] = useState('dashboard');
   
-  const { loading, error } = useAppStore();
+   const { error } = useAppStore();
 
   // Start polling for real-time data
   usePolling({

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Box,
   Typography,
-  Divider,
   IconButton,
   useTheme,
   useMediaQuery,
@@ -107,38 +107,38 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       {/* Navigation Menu */}
       <List sx={{ flex: 1, py: 1 }}>
         {menuItems.map((item) => (
-          <ListItem
-            key={item.id}
-            button
-            selected={currentView === item.id}
-            onClick={() => handleItemClick(item.id)}
-            sx={{
-              mx: 1,
-              my: 0.5,
-              borderRadius: 1,
-              '&.Mui-selected': {
-                backgroundColor: 'primary.main',
-                color: 'primary.contrastText',
-                '&:hover': {
-                  backgroundColor: 'primary.dark',
-                },
-                '& .MuiListItemIcon-root': {
-                  color: 'primary.contrastText',
-                },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText
-              primary={item.label}
-              primaryTypographyProps={{
-                fontWeight: currentView === item.id ? 600 : 400,
-              }}
-            />
-          </ListItem>
-        ))}
+           <ListItem key={item.id} disablePadding>
+             <ListItemButton
+               selected={currentView === item.id}
+               onClick={() => handleItemClick(item.id)}
+               sx={{
+                 mx: 1,
+                 my: 0.5,
+                 borderRadius: 1,
+                 '&.Mui-selected': {
+                   backgroundColor: 'primary.main',
+                   color: 'primary.contrastText',
+                   '&:hover': {
+                     backgroundColor: 'primary.dark',
+                   },
+                   '& .MuiListItemIcon-root': {
+                     color: 'primary.contrastText',
+                   },
+                 },
+               }}
+             >
+               <ListItemIcon sx={{ minWidth: 40 }}>
+                 {item.icon}
+               </ListItemIcon>
+               <ListItemText
+                 primary={item.label}
+                 primaryTypographyProps={{
+                   fontWeight: currentView === item.id ? 600 : 400,
+                 }}
+               />
+             </ListItemButton>
+           </ListItem>
+         ))}
       </List>
 
       {/* Footer */}

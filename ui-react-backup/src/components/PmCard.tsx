@@ -32,7 +32,7 @@ interface PmCardProps {
 }
 
 // Styled components
-const StyledCard = styled(Card)<{ cardColor: string }>(({ theme, cardColor }) => ({
+const StyledCard = styled(Card)<{ cardColor: string }>(({ cardColor }) => ({
   minHeight: 180,
   background: `linear-gradient(135deg, ${cardColor}08 0%, ${cardColor}04 100%)`,
   border: `1px solid ${cardColor}20`,

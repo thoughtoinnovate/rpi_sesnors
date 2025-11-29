@@ -6,7 +6,6 @@ import {
   Box,
   ToggleButton,
   ToggleButtonGroup,
-  Button,
   IconButton,
   Tooltip,
 } from '@mui/material';
@@ -49,7 +48,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   overflow: 'hidden',
 }));
 
-const ChartContainer = styled(Box)(({ theme }) => ({
+const ChartContainer = styled(Box)(() => ({
   width: '100%',
   height: 350,
   position: 'relative',
@@ -84,7 +83,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, loading = false }) => {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['pm25', 'pm10', 'aqi']);
 
   const handleChartTypeChange = (
-    event: React.MouseEvent<HTMLElement>,
+    _event: React.MouseEvent<HTMLElement>,
     newChartType: 'line' | 'area' | null,
   ) => {
     if (newChartType !== null) {
@@ -93,7 +92,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, loading = false }) => {
   };
 
   const handleMetricChange = (
-    event: React.MouseEvent<HTMLElement>,
+    _event: React.MouseEvent<HTMLElement>,
     newMetrics: string[],
   ) => {
     setSelectedMetrics(newMetrics);
@@ -125,8 +124,13 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, loading = false }) => {
     );
   }
 
-  const ChartComponent = chartType === 'line' ? LineChart : AreaChart;
-  const DataComponent = chartType === 'line' ? Line : Area;
+  // Component mapping for type-safe dynamic rendering
+  const ChartComponents = {
+    line: LineChart,
+    area: AreaChart,
+  };
+
+  const ChartComponent = ChartComponents[chartType];
 
   return (
     <StyledCard>
@@ -207,8 +211,18 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, loading = false }) => {
               />
               <Legend />
               
-              {selectedMetrics.includes('pm25') && (
-                <DataComponent
+              {selectedMetrics.includes('pm25') && chartType === 'line' && (
+                <Line
+                  type="monotone"
+                  dataKey="pm25"
+                  stroke="#ff9800"
+                  strokeWidth={2}
+                  name="PM2.5 (μg/m³)"
+                  dot={false}
+                />
+              )}
+              {selectedMetrics.includes('pm25') && chartType === 'area' && (
+                <Area
                   type="monotone"
                   dataKey="pm25"
                   stroke="#ff9800"
@@ -219,8 +233,18 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, loading = false }) => {
                 />
               )}
               
-              {selectedMetrics.includes('pm10') && (
-                <DataComponent
+              {selectedMetrics.includes('pm10') && chartType === 'line' && (
+                <Line
+                  type="monotone"
+                  dataKey="pm10"
+                  stroke="#2196f3"
+                  strokeWidth={2}
+                  name="PM10 (μg/m³)"
+                  dot={false}
+                />
+              )}
+              {selectedMetrics.includes('pm10') && chartType === 'area' && (
+                <Area
                   type="monotone"
                   dataKey="pm10"
                   stroke="#2196f3"
@@ -231,8 +255,18 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, loading = false }) => {
                 />
               )}
               
-              {selectedMetrics.includes('aqi') && (
-                <DataComponent
+              {selectedMetrics.includes('aqi') && chartType === 'line' && (
+                <Line
+                  type="monotone"
+                  dataKey="aqi"
+                  stroke="#4caf50"
+                  strokeWidth={2}
+                  name="AQI"
+                  dot={false}
+                />
+              )}
+              {selectedMetrics.includes('aqi') && chartType === 'area' && (
+                <Area
                   type="monotone"
                   dataKey="aqi"
                   stroke="#4caf50"
