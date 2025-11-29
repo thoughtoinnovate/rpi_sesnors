@@ -1,0 +1,92 @@
+🚀 AQI REST API Server
+========================================
+Host: 0.0.0.0
+Port: 5000
+Debug: False
+Workers: 1
+Database: ../aqi_demo.db
+========================================
+Starting server... (Press Ctrl+C to stop)
+API will be available at: http://0.0.0.0:5000
+
+ * Serving Flask app 'app.rest_api.app'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.68.53:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+2025-11-19 18:54:00,905 - pm25_sensor - INFO - Initializing PM25 Sensor
+INFO:pm25_sensor:Initializing PM25 Sensor
+INFO:werkzeug:127.0.0.1 - - [19/Nov/2025 18:54:00] "GET /api/health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Nov/2025 18:54:50] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Nov/2025 18:54:50] "GET /js/main.js HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+2025-11-19 18:54:50,970 - pm25_sensor - INFO - Initializing PM25 Sensor
+INFO:pm25_sensor:Initializing PM25 Sensor
+INFO:werkzeug:127.0.0.1 - - [19/Nov/2025 18:54:50] "GET /api/health HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Nov/2025 18:55:04] "GET /css/main.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Nov/2025 18:55:04] "GET /web-ui/dummy.js HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:29] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:30] "GET /css/main.css HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:30] "GET /css/responsive.css HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:30] "GET /js/api.js HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:30] "GET /js/main.js HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:30] "GET /js/ui.js HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:30] "GET /api/locations HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:30] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 18:55:32] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [19/Nov/2025 19:15:16] "GET / HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+2025-11-19 19:15:17,149 - pm25_sensor - INFO - Initializing PM25 Sensor
+INFO:pm25_sensor:Initializing PM25 Sensor
+INFO:werkzeug:127.0.0.1 - - [19/Nov/2025 19:15:17] "GET /api/health HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:33] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:34] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:35] "[36mGET /css/main.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:35] "[36mGET /css/responsive.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:35] "[36mGET /js/api.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:35] "[36mGET /js/ui.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:35] "[36mGET /js/main.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:35] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:17:35] "GET /api/locations HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:10] "GET /sensor.html HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:10] "[36mGET /css/responsive.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:10] "[36mGET /css/main.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:10] "[36mGET /js/ui.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:10] "[36mGET /js/api.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:10] "[36mGET /js/main.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:10] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:10] "GET /api/locations HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:14] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:15] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:17] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:17] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:17] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:18] "GET /sensor.html HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:19] "[36mGET /css/main.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:19] "[36mGET /css/responsive.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:19] "[36mGET /js/api.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:19] "[36mGET /js/ui.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:19] "[36mGET /js/main.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:19] "GET /api/scheduler/status HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:19] "GET /api/locations HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:52] "GET /history.html HTTP/1.1" 200 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:52] "[36mGET /css/main.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:52] "[36mGET /css/responsive.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:52] "[36mGET /js/api.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:52] "[36mGET /js/ui.js HTTP/1.1[0m" 304 -
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:52] "GET /js/history.js HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:18:52] "GET /api/locations HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:19:16] "GET /api/history/TestLocation?hours=168 HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:19:19] "GET /api/history/TestLocation?hours=168 HTTP/1.1" 200 -
+INFO:aqi.aqi_app:AQI database initialized at /home/kdhpi/Documents/code_sensor/pm25/app/aqi_demo.db
+INFO:werkzeug:192.168.68.55 - - [19/Nov/2025 19:19:25] "GET /api/history/LivingRoom?hours=168 HTTP/1.1" 200 -
