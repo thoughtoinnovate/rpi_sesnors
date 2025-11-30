@@ -148,6 +148,10 @@ class ApiClient {
     return this.get('/sensor/aqi/sensor/reading');
   }
 
+  async getSensorDiagnostics() {
+    return this.get('/sensor/aqi/sensor/diagnostics');
+  }
+
   async getSchedulerStatus() {
     return this.get('/api/scheduler/status');
   }

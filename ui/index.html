@@ -168,15 +168,16 @@
                                 <div class="text-sm text-gray-500 dark:text-gray-400" x-text="app.aqiData?.timestamp ? new Date(app.aqiData.timestamp).toLocaleString() : ''"></div>
                             </div>
                             
-                            <div x-show="app.aqiData" class="text-center">
-                                <div class="text-6xl font-bold mb-2" 
-                                     :style="`color: ${getAqiLevel(app.aqiData.aqi).color}`"
-                                     x-text="app.aqiData.aqi"></div>
-                                <div class="text-lg font-medium mb-2" 
-                                     :class="getAqiLevel(app.aqiData.aqi).class"
-                                     x-text="getAqiLevel(app.aqiData.aqi).level"></div>
-                                <p class="text-gray-600 dark:text-gray-400" x-text="getHealthMessage(app.aqiData.aqi)"></p>
-                            </div>
+                             <div x-show="app.aqiData" class="text-center">
+                                 <div class="text-6xl font-bold mb-2"
+                                      :style="`color: ${getAqiLevel(app.aqiData.aqi).color}`"
+                                      x-text="app.aqiData.aqi"></div>
+                                 <div class="text-lg font-medium mb-2"
+                                      :class="getAqiLevel(app.aqiData.aqi).class"
+                                      x-text="getAqiLevel(app.aqiData.aqi).level"></div>
+                                 <p class="text-gray-600 dark:text-gray-400 mb-2" x-text="getHealthMessage(app.aqiData.aqi)"></p>
+                                 <div class="text-xs text-gray-500 dark:text-gray-500" x-text="app.aqiData.calculationMethod"></div>
+                             </div>
                             
                             <div x-show="!app.aqiData" class="text-center text-gray-500 dark:text-gray-400">
                                 No AQI data available

@@ -172,8 +172,51 @@ document.addEventListener('alpine:init', () => {
         // Fetch AQI data
         promises.push(
           window.apiClient.getAqiReading()
-            .then(data => app.setAqiData(data))
+            .then(data => {
+              // Extract AQI value from nested structure for easier UI access
+              const aqiData = { ...data };
+              if (data.reading?.air_quality_index) {
+                aqiData.aqi = data.reading.air_quality_index.aqi_value;
+                aqiData.aqiLevel = data.reading.air_quality_index.aqi_level;
+                aqiData.aqiColor = data.reading.air_quality_index.aqi_color;
+                aqiData.healthMessage = data.reading.air_quality_index.health_message;
+                aqiData.calculationMethod = 'AQI v2 (Atmospheric values • EPA Standard)';
+              }
+              app.setAqiData(aqiData);
+            })
             .catch(err => console.warn('Failed to fetch AQI data:', err))
+        );
+
+        // Fetch sensor diagnostics/status
+        promises.push(
+          window.apiClient.getSensorDiagnostics()
+            .then(data => {
+              // Extract sensor status from diagnostics
+              const sensorInfo = data.diagnostics?.sensor_info;
+              const performance = data.diagnostics?.performance;
+              if (sensorInfo) {
+                app.setSensorStatus({
+                  connected: data.diagnostics?.sensor_status === 'healthy',
+                  warmedUp: sensorInfo.is_warmed_up,
+                  sleeping: sensorInfo.is_sleeping,
+                  firmwareVersion: sensorInfo.firmware_version,
+                  address: sensorInfo.i2c_address,
+                  bus: sensorInfo.i2c_bus,
+                  lastReading: performance?.last_reading_time,
+                  errorCount: performance?.total_errors || 0,
+                  readingCount: performance?.total_readings || 0
+                });
+              }
+            })
+            .catch(err => {
+              console.warn('Failed to fetch sensor diagnostics:', err);
+              // Set offline status on error
+              app.setSensorStatus({
+                connected: false,
+                warmedUp: false,
+                sleeping: false
+              });
+            })
         );
 
         // Fetch scheduler status
@@ -198,21 +241,39 @@ document.addEventListener('alpine:init', () => {
 
         await Promise.allSettled(promises);
 
-        // Calculate PM data from current reading
-        if (app.currentReading) {
-          app.setPm25Data({
-            value: app.currentReading.pm25,
-            unit: 'μg/m³',
-            trend: 'stable',
-            lastUpdated: app.currentReading.timestamp
-          });
+        // Calculate PM data from live sensor reading (preferred) or stored reading (fallback)
+        const readingData = app.aqiData?.reading || app.currentReading;
+        if (readingData) {
+          // Extract PM2.5 from concentrations (live sensor) or direct values (stored)
+          const pm25Value = readingData.concentrations?.atmospheric?.['PM2.5'] ||
+                           readingData.pm2_5_atmospheric ||
+                           readingData.pm25;
 
-          app.setPm10Data({
-            value: app.currentReading.pm10,
-            unit: 'μg/m³',
-            trend: 'stable',
-            lastUpdated: app.currentReading.timestamp
-          });
+          const pm10Value = readingData.concentrations?.atmospheric?.['PM10'] ||
+                           readingData.pm10_atmospheric ||
+                           readingData.pm10;
+
+          const timestamp = app.aqiData?.timestamp ||
+                           readingData.timestamp ||
+                           new Date().toISOString();
+
+          if (pm25Value !== undefined) {
+            app.setPm25Data({
+              value: pm25Value,
+              unit: 'μg/m³',
+              trend: 'stable',
+              lastUpdated: timestamp
+            });
+          }
+
+          if (pm10Value !== undefined) {
+            app.setPm10Data({
+              value: pm10Value,
+              unit: 'μg/m³',
+              trend: 'stable',
+              lastUpdated: timestamp
+            });
+          }
         }
 
       } catch (error) {
