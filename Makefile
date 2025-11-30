@@ -1,13 +1,13 @@
 # AQI Monitoring System Makefile
 # Commands to manage the REST API server
 
-.PHONY: help install start stop restart status logs clean
+.PHONY: help install start stop restart status logs clean unified
 
 # Configuration
 PID_FILE = /tmp/pm25_api_server.pid
 LOG_FILE = /tmp/pm25_api.log
-APP_PATH = app/rest_api/app.py
-PYTHON_PATH = ./venv/bin/python
+APP_PATH = /home/kdhpi/Documents/workk/code/rpi_sesnors/app/rest_api/app.py
+PYTHON_PATH = /home/kdhpi/Documents/workk/code/rpi_sesnors/venv/bin/python
 
 # Default target
 help:
@@ -15,9 +15,10 @@ help:
 	@echo ""
 	@echo "Available commands:"
 	@echo "  install  - Install Python and Node.js dependencies"
-	@echo "  start    - Start the REST API server"
-	@echo "  stop     - Stop the REST API server"
-	@echo "  restart  - Restart the REST API server"
+	@echo "  start    - Start REST API server"
+	@echo "  unified  - Start unified UI + API server (recommended)"
+	@echo "  stop     - Stop REST API server"
+	@echo "  restart  - Restart REST API server"
 	@echo "  status   - Check if server is running"
 	@echo "  logs     - Show server logs (tail -f)"
 	@echo "  clean    - Remove PID and log files"
@@ -35,12 +36,51 @@ start:
 	@if [ -f $(PID_FILE) ] && kill -0 $$(cat $(PID_FILE)) 2>/dev/null; then \
 		echo "Server is already running (PID: $$(cat $(PID_FILE)))"; \
 	else \
-		echo "Starting AQI REST API server..."; \
+		echo "🔧 Validating dependencies..."; \
+		if ! command -v python3 >/dev/null 2>&1; then \
+			echo "❌ Python3 not found. Please install Python3."; \
+			exit 1; \
+		fi; \
+		if ! command -v npm >/dev/null 2>&1; then \
+			echo "❌ npm not found. Please install Node.js."; \
+			exit 1; \
+		fi; \
+		echo "✅ Dependencies OK"; \
+		echo "🐍 Setting up virtual environment..."; \
+		if [ ! -d "venv" ] || [ ! -f "venv/bin/python" ]; then \
+			echo "Creating virtual environment..."; \
+			python3 -m venv venv; \
+			./venv/bin/pip install -r app/rest_api/requirements.txt; \
+			echo "✅ Virtual environment setup complete"; \
+		else \
+			echo "✅ Virtual environment already exists"; \
+		fi; \
+		echo "🔌 Checking port availability..."; \
+		if netstat -tln 2>/dev/null | grep -q ":5000 "; then \
+			echo "Port 5000 in use, attempting to free it..."; \
+			PID=$$(netstat -tlnp 2>/dev/null | grep ":5000 " | awk '{print $$7}' | cut -d'/' -f1 | head -1); \
+			if [ -n "$$PID" ] && [ "$$PID" != "-" ]; then \
+				kill -9 $$PID 2>/dev/null || true; \
+				sleep 2; \
+				if netstat -tln 2>/dev/null | grep -q ":5000 "; then \
+					echo "❌ Could not free port 5000. Please manually stop the conflicting process."; \
+					exit 1; \
+				fi; \
+				echo "✅ Port 5000 freed"; \
+			else \
+				echo "⚠️  Could not determine PID of process using port 5000"; \
+			fi; \
+		fi; \
+		echo "🚀 Starting unified UI + API server..."; \
+		echo "📦 Building UI files..."; \
+		cd ui && npm run build-for-flask; \
+		echo "✅ UI built successfully"; \
+		echo "🌐 Starting Flask server..."; \
 		$(PYTHON_PATH) $(APP_PATH) > $(LOG_FILE) 2>&1 & echo $$! > $(PID_FILE); \
 		sleep 3; \
 		if [ -f $(PID_FILE) ] && kill -0 $$(cat $(PID_FILE)) 2>/dev/null; then \
 			echo "Server started successfully (PID: $$(cat $(PID_FILE)))"; \
-			echo "API available at: http://localhost:5000"; \
+			echo "API and UI available at: http://localhost:5000"; \
 		else \
 			echo "Failed to start server. Check logs with 'make logs'"; \
 			exit 1; \
@@ -124,7 +164,16 @@ install:
 	@echo "✅ All dependencies installed successfully!"
 	@echo ""
 	@echo "Next steps:"
-	@echo "  make start    - Start the REST API server"
-	@echo "  cd ui && npm run dev    - Start the frontend development server"
+	@echo "  make unified - Start unified UI + API server (recommended)"
+	@echo "  make start   - Start REST API server only"
+	@echo "  cd ui && npm run dev    - Start frontend development server"
 	@echo ""
 	@echo "Note: Python dependencies are installed in ./venv/ directory"
+
+unified:
+	@echo "🚀 Starting unified UI + API server..."
+	@echo "📦 Building UI files..."
+	@cd ui && npm run build-for-flask
+	@echo "✅ UI built successfully"
+	@echo "🌐 Starting Flask server..."
+	@cd app/rest_api && $(PYTHON_PATH) app.py

@@ -1,9 +1,8 @@
 // API Client using Fetch API
 class ApiClient {
   constructor() {
-    this.baseURL = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5000' 
-      : `http://${window.location.hostname}:5000`;
+    // Use relative URLs since UI and API are on same port
+    this.baseURL = window.location.origin;
     this.timeout = 10000; // 10 seconds
     this.abortControllers = {};
   }

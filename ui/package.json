@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "concurrently \"npm run watch-css\" \"npm run serve\"",
     "build": "npm run build-css && npm run build-js",
+    "build-for-flask": "npm run build-css && npm run build-js",
     "build-css": "tailwindcss -i ./src/css/input.css -o ./dist/css/style.css --minify",
     "build-js": "terser ./src/js/main.js -o ./dist/js/bundle.js --compress --mangle",
     "watch-css": "tailwindcss -i ./src/css/input.css -o ./dist/css/style.css --watch",
     "serve": "python3 -m http.server 5173 --directory .",
+    "serve-with-flask": "echo 'UI served by Flask at http://localhost:5000'",
     "clean": "rm -rf dist/* node_modules",
     "install-deps": "npm install",
     "start": "npm run build && npm run serve"

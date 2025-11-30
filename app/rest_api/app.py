@@ -31,7 +31,7 @@ current_dir = Path(__file__).parent
 parent_dir = current_dir.parent.parent
 sys.path.insert(0, str(parent_dir))
 
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, send_from_directory
 try:
     from flask_cors import CORS
 except ImportError:
@@ -51,7 +51,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Flask app configuration
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 if CORS:
     CORS(app)  # Enable CORS for web applications
 
@@ -61,6 +61,25 @@ DEFAULT_DB_PATH = os.getenv('AQI_DB_PATH', str(current_dir.parent / 'aqi_demo.db
 # Global scheduler management
 scheduler = None
 scheduler_thread = None
+
+# UI serving routes (must come before API routes)
+@app.route('/')
+def serve_ui():
+    """Serve the main UI index.html."""
+    ui_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ui')
+    return send_from_directory(ui_path, 'index.html')
+
+@app.route('/src/<path:filename>')
+def serve_src_files(filename):
+    """Serve UI source files (CSS, JS)."""
+    ui_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ui')
+    return send_from_directory(os.path.join(ui_path, 'src'), filename)
+
+@app.route('/dist/<path:filename>')
+def serve_dist_files(filename):
+    """Serve UI built files (CSS, JS)."""
+    ui_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'ui')
+    return send_from_directory(os.path.join(ui_path, 'dist'), filename)
 
 def get_database():
     """Get database connection with error handling."""
