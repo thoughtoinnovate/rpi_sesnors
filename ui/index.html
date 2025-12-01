@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyHome AQI Console</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell" x-data="dashboardApp()" x-init="init()" x-cloak>
+    <header class="top-bar">
+        <div class="brand">
+            <div class="logo">AQ</div>
+            <div>
+                <h1>MyHome</h1>
+                <p>Sensors / AQI</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button class="ghost" @click="toggleSidebar">
+                <span x-text="sidebarOpen ? 'Hide Menu' : 'Show Menu'"></span>
+            </button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar" :class="{ open: sidebarOpen }">
+            <div class="menu-group">
+                <p class="menu-label">Sensors</p>
+                <p class="menu-sub-label">Air Quality</p>
+                <button :class="{ active: currentView === 'dashboard' }" @click="setCurrentView('dashboard')">Dashboard</button>
+                <button :class="{ active: currentView === 'schedule' }" @click="setCurrentView('schedule')">Scheduler</button>
+                <button :class="{ active: currentView === 'reports' }" @click="setCurrentView('reports')">Reports</button>
+                <button :class="{ active: currentView === 'hardware' }" @click="setCurrentView('hardware')">Sensor Hardware</button>
+            </div>
+            <div class="menu-group">
+                <p class="menu-label">System</p>
+                <button :class="{ active: currentView === 'system' }" @click="setCurrentView('system')">OS &amp; Hardware</button>
+            </div>
+        </aside>
+
+        <main class="content">
+            <section x-show="currentView === 'dashboard'" class="panel">
+                <header class="panel-head">
+                    <div>
+                        <h2>Dashboard</h2>
+                        <p>Atmospheric and standard particulate readings</p>
+                    </div>
+                    <div class="panel-controls">
+                        <label>
+                            Sample Mode
+                            <select x-model="dashboardMode" @change="updateDashboardMode">
+                                <option value="atmosphere">Atmospheric</option>
+                                <option value="standard">Standard</option>
+                            </select>
+                        </label>
+                        <label>
+                            AQI Method
+                            <select x-model="aqiMethod" @change="computeDashboardValues">
+                                <template x-for="(label, method) in aqiMethodOptions" :key="method">
+                                    <option :value="method" x-text="label"></option>
+                                </template>
+                            </select>
+                        </label>
+                    </div>
+                </header>
+
+                <div class="grid two">
+                    <article class="card primary">
+                        <div class="card-head">
+                            <div>
+                                <p>Current AQI</p>
+                                <h3 x-text="aqiLabel()"></h3>
+                            </div>
+                            <div class="timestamp" x-text="formatTimestamp(lastSnapshotAt, 'Never')"></div>
+                        </div>
+                        <div class="aqi-value" :class="aqiClass">
+                            <span x-text="displayAqiValue()"></span>
+                            <small x-text="aqiDescriptor"></small>
+                        </div>
+                        <div class="aqi-meta">
+                            <p>
+                                Source: <strong x-text="readingLabel"></strong>
+                                · Method: <strong x-text="aqiMethodLabel()"></strong>
+                            </p>
+                            <button class="ghost" @click="refreshSnapshot">Refresh Snapshot</button>
+                        </div>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>PM Summary</h3>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric">
+                                <p>PM1.0</p>
+                                <strong x-text="formatPmValue('pm1_0')"></strong>
+                            </div>
+                            <div class="metric">
+                                <p>PM2.5</p>
+                                <strong x-text="formatPmValue('pm2_5')"></strong>
+                            </div>
+                            <div class="metric">
+                                <p>PM10</p>
+                                <strong x-text="formatPmValue('pm10')"></strong>
+                            </div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric">
+                                <p>Particle 0.3um</p>
+                                <strong x-text="formatParticleValue('particles_0_3um')"></strong>
+                            </div>
+                            <div class="metric">
+                                <p>Particle 2.5um</p>
+                                <strong x-text="formatParticleValue('particles_2_5um')"></strong>
+                            </div>
+                            <div class="metric">
+                                <p>Particle 10um</p>
+                                <strong x-text="formatParticleValue('particles_10um')"></strong>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <div class="card-head">
+                        <h3>Last Snapshot</h3>
+                    </div>
+                    <pre class="code" x-text="formatJson(snapshot)"></pre>
+                </article>
+            </section>
+
+            <section x-show="currentView === 'schedule'" class="panel">
+                <header class="panel-head">
+                    <div>
+                        <h2>Scheduler</h2>
+                        <p>Manage capture configs and automation</p>
+                    </div>
+                    <button class="ghost" @click="fetchSchedulerStatus">Check Status</button>
+                </header>
+
+                <div class="grid two">
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>Status</h3>
+                            <span class="chip" :class="schedulerStatus.running ? 'ok' : 'warn'" x-text="schedulerStatus.running ? 'Running' : 'Stopped'"></span>
+                        </div>
+                        <dl class="meta">
+                            <div>
+                                <dt>Config</dt>
+                                <dd x-text="schedulerStatus.config_name || '--'"></dd>
+                            </div>
+                            <div>
+                                <dt>Powersave</dt>
+                                <dd x-text="schedulerStatus.powersave ? 'On' : 'Off'"></dd>
+                            </div>
+                        </dl>
+                        <label>
+                            Use config
+                            <select x-model="startConfigId">
+                                <option value="">Select...</option>
+                                <template x-for="cfg in schedulerConfigs" :key="cfg.id">
+                                    <option :value="cfg.id" x-text="cfg.name + ' (' + cfg.type + ')'"></option>
+                                </template>
+                            </select>
+                        </label>
+                        <div class="button-row">
+                            <button @click="startScheduler" :disabled="!startConfigId">Start</button>
+                            <button class="danger" @click="stopScheduler">Stop</button>
+                        </div>
+                        <p class="hint" x-text="schedulerMessage"></p>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>Recent Readings</h3>
+                            <button class="ghost" @click="fetchRecentReadings">Refresh</button>
+                        </div>
+                        <div class="scroll">
+                            <table>
+                                <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Location</th>
+                                    <th>Mode</th>
+                                    <th>PM2.5</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <template x-if="recentReadings.length === 0">
+                                    <tr>
+                                        <td colspan="4">No samples yet.</td>
+                                    </tr>
+                                </template>
+                                <template x-for="item in recentReadings" :key="item.timestamp">
+                                    <tr>
+                                        <td x-text="formatTimestamp(item.timestamp)"></td>
+                                        <td x-text="item.location || '--'"></td>
+                                        <td x-text="item.type"></td>
+                                        <td x-text="item.pm2_5"></td>
+                                    </tr>
+                                </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="grid two">
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>Config</h3>
+                            <button class="ghost" @click="resetConfigForm">New</button>
+                        </div>
+                        <div class="form-grid">
+                            <label>
+                                Saved Config
+                                <select x-model="selectedConfigId" @change="populateForm">
+                                    <option value="">New Config</option>
+                                    <template x-for="cfg in schedulerConfigs" :key="cfg.id">
+                                        <option :value="cfg.id" x-text="cfg.name + ' (' + cfg.location + ')'"></option>
+                                    </template>
+                                </select>
+                            </label>
+                            <label>
+                                Name
+                                <input type="text" x-model="configForm.name" placeholder="lab-standard">
+                            </label>
+                            <label>
+                                Location
+                                <input type="text" x-model="configForm.location" placeholder="Lab">
+                            </label>
+                            <label>
+                                Mode
+                                <select x-model="configForm.type">
+                                    <option value="atmospheric">Atmospheric</option>
+                                    <option value="standard">Standard</option>
+                                </select>
+                            </label>
+                            <label>
+                                Frequency
+                                <select x-model="configForm.frequency">
+                                    <template x-for="freq in frequencyOptions" :key="freq">
+                                        <option :value="freq" x-text="freq"></option>
+                                    </template>
+                                </select>
+                            </label>
+                            <label>
+                                Retention
+                                <select x-model="configForm.retention">
+                                    <option value="">None</option>
+                                    <template x-for="ret in retentionOptions" :key="ret">
+                                        <option :value="ret" x-text="ret"></option>
+                                    </template>
+                                </select>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" x-model="configForm.enabled">
+                                <span>Enabled</span>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" x-model="configForm.powersave">
+                                <span>Powersave</span>
+                            </label>
+                        </div>
+                        <div class="button-row">
+                            <button @click="saveConfig" :disabled="!configForm.name || !configForm.location">Save</button>
+                            <button class="danger" @click="deleteConfig" :disabled="!selectedConfigId">Delete</button>
+                        </div>
+                        <p class="hint" x-text="configMessage"></p>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>Cleanup</h3>
+                        </div>
+                        <div class="form-grid">
+                            <label>
+                                Location filter
+                                <input type="text" x-model="cleanup.location" placeholder="Leave blank for all">
+                            </label>
+                            <label>
+                                Before (ISO)
+                                <input type="text" x-model="cleanup.before" placeholder="2024-01-01T00:00:00Z">
+                            </label>
+                        </div>
+                        <div class="button-row">
+                            <button class="danger" @click="deleteReadings">Delete Readings</button>
+                            <button class="ghost" @click="clearCleanup">Clear</button>
+                        </div>
+                        <p class="hint" x-text="cleanupMessage"></p>
+                    </article>
+                </div>
+            </section>
+
+            <section x-show="currentView === 'reports'" class="panel">
+                <header class="panel-head">
+                    <div>
+                        <h2>Reports</h2>
+                        <p>Generate charts and aggregates by window</p>
+                    </div>
+                    <button class="ghost" @click="loadReport">Reload</button>
+                </header>
+
+                <div class="filters">
+                    <label>
+                        Location
+                        <select x-model="reportFilters.location">
+                            <option value="">All</option>
+                            <template x-for="loc in locationOptions" :key="loc">
+                                <option :value="loc" x-text="loc"></option>
+                            </template>
+                        </select>
+                    </label>
+                    <label>
+                        Metric
+                        <select x-model="reportFilters.metric">
+                            <option value="aqi">AQI</option>
+                            <option value="pm2_5">PM2.5</option>
+                            <option value="pm10">PM10</option>
+                            <option value="pm1_0">PM1.0</option>
+                        </select>
+                    </label>
+                    <label>
+                        Window
+                        <select x-model="reportFilters.window">
+                            <option value="1h">Hour</option>
+                            <option value="1d">Day</option>
+                            <option value="1w">Week</option>
+                            <option value="1m">Month</option>
+                        </select>
+                    </label>
+                    <button @click="loadReport">Apply</button>
+                </div>
+                <p class="hint" x-text="reportsMessage"></p>
+
+                <div class="report-summary">
+                    <div>
+                        <p>Selection</p>
+                        <strong x-text="reportTitle"></strong>
+                    </div>
+                    <div>
+                        <p>Points</p>
+                        <strong x-text="reportSummary.count"></strong>
+                    </div>
+                    <div>
+                        <p>Average</p>
+                        <strong x-text="reportSummary.average"></strong>
+                    </div>
+                    <div>
+                        <p>Min / Max</p>
+                        <strong x-text="formatMinMax(reportSummary.min, reportSummary.max)"></strong>
+                    </div>
+                </div>
+
+                <div class="chart">
+                    <canvas x-ref="reportChart" width="400" height="220"></canvas>
+                </div>
+            </section>
+
+            <section x-show="currentView === 'hardware'" class="panel">
+                <header class="panel-head">
+                    <div>
+                        <h2>Sensor Hardware</h2>
+                        <p>Status, firmware, and power actions</p>
+                    </div>
+                    <button class="ghost" @click="refreshSensorStatus">Refresh</button>
+                </header>
+
+                <div class="grid two">
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>Sensor Status</h3>
+                            <span class="chip" :class="sensorStatus.online ? 'ok' : 'warn'" x-text="sensorStatus.online ? 'Online' : 'Offline'"></span>
+                        </div>
+                        <dl class="meta">
+                            <div>
+                                <dt>Firmware</dt>
+                                <dd x-text="sensorStatus.firmware_version != null ? sensorStatus.firmware_version : '--'"></dd>
+                            </div>
+                            <div>
+                                <dt>Bus / Addr</dt>
+                                <dd x-text="sensorConnectionLabel()"></dd>
+                            </div>
+                        </dl>
+                        <p class="hint" x-text="sensorStatus.error"></p>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>Power Control</h3>
+                        </div>
+                        <div class="button-row">
+                            <button @click="setPowerMode('low')" :disabled="powerBusy">Enter Power Save</button>
+                            <button class="ghost" @click="setPowerMode('wake')" :disabled="powerBusy">Wake Sensor</button>
+                        </div>
+                        <p class="hint" x-text="powerMessage"></p>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <div class="card-head">
+                        <h3>Snapshot</h3>
+                    </div>
+                    <pre class="code" x-text="formatJson(snapshot)"></pre>
+                </article>
+            </section>
+
+            <section x-show="currentView === 'system'" class="panel">
+                <header class="panel-head">
+                    <div>
+                        <h2>OS &amp; Hardware</h2>
+                        <p>Raspberry Pi metrics</p>
+                    </div>
+                    <button class="ghost" @click="fetchSystemInfo">Refresh</button>
+                </header>
+
+                <div class="grid two">
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>Platform</h3>
+                        </div>
+                        <dl class="meta">
+                            <div>
+                                <dt>Host</dt>
+                                <dd x-text="systemInfo.platform ? systemInfo.platform.node : '--'"></dd>
+                            </div>
+                            <div>
+                                <dt>OS</dt>
+                                <dd x-text="systemInfo.platform ? systemInfo.platform.system + ' ' + systemInfo.platform.release : '--'"></dd>
+                            </div>
+                            <div>
+                                <dt>Uptime</dt>
+                                <dd x-text="formatDuration(systemInfo.uptime_seconds)"></dd>
+                            </div>
+                            <div>
+                                <dt>CPU Temp</dt>
+                                <dd x-text="formatTemperature(systemInfo.cpu_temperature_c)"></dd>
+                            </div>
+                        </dl>
+                    </article>
+
+                    <article class="card">
+                        <div class="card-head">
+                            <h3>Resources</h3>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric">
+                                <p>Load (1/5/15m)</p>
+                                <strong x-text="formatLoad(systemInfo.load_average)"></strong>
+                            </div>
+                            <div class="metric">
+                                <p>Memory Used</p>
+                                <strong x-text="formatBytes(systemInfo.memory ? systemInfo.memory.used : undefined)"></strong>
+                            </div>
+                            <div class="metric">
+                                <p>Disk Free</p>
+                                <strong x-text="formatBytes(systemInfo.disk ? systemInfo.disk.free : undefined)"></strong>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" x-show="banner" x-text="banner"></div>
+</div>
+
+<script defer src="vendor/chart.umd.js"></script>
+<script defer src="app.js"></script>
+<script defer src="vendor/alpine.min.js"></script>
+</body>
+</html>

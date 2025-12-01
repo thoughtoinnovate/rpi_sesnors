@@ -1,0 +1,10 @@
+# AQI package configuration
+[sensor]
+# Raspberry Pi I2C bus index (1 is default on modern Pi boards)
+bus = 1
+# Device address of the SEN0460 module (0x19 decimal = 25)
+i2c_address = 25
+# Number of attempts for each I2C read/write (set to 1 to disable retries)
+retries = 3
+# Delay between retries, in milliseconds
+retry_delay_ms = 200
