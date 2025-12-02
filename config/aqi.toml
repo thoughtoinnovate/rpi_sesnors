@@ -8,3 +8,5 @@ i2c_address = 25
 retries = 3
 # Delay between retries, in milliseconds
 retry_delay_ms = 200
+# Timeout for I2C operations, in milliseconds
+timeout_ms = 5000

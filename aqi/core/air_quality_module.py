@@ -8,9 +8,10 @@ module does not depend on the original DFRobot Python package.
 from __future__ import annotations
 
 import os
+import threading
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 try:  # Python 3.11+
     import tomllib
@@ -23,6 +24,7 @@ DEFAULT_BUS = 0x01
 DEFAULT_I2C_ADDRESS = 0x19
 DEFAULT_RETRIES = 1
 DEFAULT_RETRY_DELAY_MS = 1000
+DEFAULT_TIMEOUT_MS = 5000
 CONFIG_ENV_VAR = "AQI_CONFIG_FILE"
 CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "aqi.toml"
 LEGACY_CONFIG_PATH = Path(__file__).with_name("air_quality_config.toml")
@@ -46,11 +48,32 @@ class AirQualitySensor:
     PARTICLENUM_10_UM_EVERY0_1L_AIR = 0x1B
     PARTICLENUM_GAIN_VERSION = 0x1D
 
-    def __init__(self, bus: int, addr: int, retries: int = DEFAULT_RETRIES, retry_delay_s: float = DEFAULT_RETRY_DELAY_MS / 1000.0) -> None:
+    def __init__(self, bus: int, addr: int, retries: int = DEFAULT_RETRIES, retry_delay_s: float = DEFAULT_RETRY_DELAY_MS / 1000.0, timeout_s: float = DEFAULT_TIMEOUT_MS / 1000.0) -> None:
         self._addr = addr
         self._bus = smbus.SMBus(bus)
         self._retries = max(1, int(retries))
         self._retry_delay = max(0.0, float(retry_delay_s))
+        self._timeout = max(0.0, float(timeout_s))
+
+    def _read_with_timeout(self, func: Callable[[], Any]) -> Any:
+        """Execute a function with a timeout using threading."""
+        result = [None]
+        exception = [None]
+
+        def target():
+            try:
+                result[0] = func()
+            except Exception as e:
+                exception[0] = e
+
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.join(self._timeout)
+        if thread.is_alive():
+            raise TimeoutError(f"I2C operation timed out after {self._timeout} seconds")
+        if exception[0]:
+            raise exception[0]
+        return result[0]
 
     def gain_particle_concentration_ugm3(self, pm_type: int) -> int:
         """Return particulate mass concentration for the given register."""
@@ -79,9 +102,9 @@ class AirQualitySensor:
         """Best-effort register write."""
         for attempt in range(self._retries):
             try:
-                self._bus.write_i2c_block_data(self._addr, reg, data)
+                self._read_with_timeout(lambda: self._bus.write_i2c_block_data(self._addr, reg, data))
                 return
-            except OSError:
+            except (OSError, TimeoutError):
                 print("please check connect!")
                 if attempt < self._retries - 1 and self._retry_delay > 0:
                     time.sleep(self._retry_delay)
@@ -90,8 +113,8 @@ class AirQualitySensor:
         """Read bytes from the given register."""
         for attempt in range(self._retries):
             try:
-                return self._bus.read_i2c_block_data(self._addr, reg, length)
-            except OSError:
+                return self._read_with_timeout(lambda: self._bus.read_i2c_block_data(self._addr, reg, length))
+            except (OSError, TimeoutError):
                 print("please check connect!")
                 if attempt < self._retries - 1 and self._retry_delay > 0:
                     time.sleep(self._retry_delay)
@@ -117,6 +140,7 @@ def _load_sensor_config() -> Dict[str, int]:
         "i2c_address": DEFAULT_I2C_ADDRESS,
         "retries": DEFAULT_RETRIES,
         "retry_delay_ms": DEFAULT_RETRY_DELAY_MS,
+        "timeout_ms": DEFAULT_TIMEOUT_MS,
     }
     for candidate in _candidate_config_paths():
         if candidate.exists():
@@ -127,6 +151,7 @@ def _load_sensor_config() -> Dict[str, int]:
             config["i2c_address"] = int(sensor_cfg.get("i2c_address", config["i2c_address"]))
             config["retries"] = int(sensor_cfg.get("retries", config["retries"]))
             config["retry_delay_ms"] = int(sensor_cfg.get("retry_delay_ms", config["retry_delay_ms"]))
+            config["timeout_ms"] = int(sensor_cfg.get("timeout_ms", config["timeout_ms"]))
             break
     return config
 
@@ -144,17 +169,20 @@ def create_sensor(
     address: int | None = None,
     retries: int | None = None,
     retry_delay_ms: int | None = None,
+    timeout_ms: int | None = None,
 ) -> AirQualitySensor:
     """Instantiate and return the embedded sensor driver."""
     resolved_bus = _SENSOR_CONFIG["bus"] if bus is None else bus
     resolved_address = _SENSOR_CONFIG["i2c_address"] if address is None else address
     resolved_retries = _SENSOR_CONFIG["retries"] if retries is None else retries
     resolved_retry_delay_ms = _SENSOR_CONFIG["retry_delay_ms"] if retry_delay_ms is None else retry_delay_ms
+    resolved_timeout_ms = _SENSOR_CONFIG["timeout_ms"] if timeout_ms is None else timeout_ms
     return AirQualitySensor(
         resolved_bus,
         resolved_address,
         retries=max(1, int(resolved_retries)),
         retry_delay_s=max(0.0, float(resolved_retry_delay_ms) / 1000.0),
+        timeout_s=max(0.0, float(resolved_timeout_ms) / 1000.0),
     )
 
 
